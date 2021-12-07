@@ -1,5 +1,5 @@
 const socket = io.connect('http://esms.test:8080');
-
+let table;
 socket.on('connect', () => {
 
     //socket.emit('sortMasterlist');
@@ -13,13 +13,13 @@ socket.on('onReloadMasterlist', () => {
     socket.emit('getMasterlist',filterData);
 })
 
-const isFilteredData = () =>{
+const isFilteredData = () => {
     let filterData = $('#filter').find(":selected").text();
     console.log(filterData);
-    socket.emit('getMasterlist',filterData);
+    socket.emit('getMasterlist', filterData);
 }
 socket.on('receivedMasterlist', data => {
-   
+
 
     console.log("receivedMasterlist", data);
     // getData(data)
@@ -45,10 +45,11 @@ socket.on('receivedMasterlist', data => {
         // console.log("myDataSET", getData(data))
     }
 
-    const table = $('#datatable').DataTable({
+    table = $('#datatable').DataTable({
         "responsive": true,
         "lengthChange": true,
         "autoWidth": false,
+        stateSave: true,
         destroy: true,
         data: dataSet,
         columns: [
@@ -63,7 +64,7 @@ socket.on('receivedMasterlist', data => {
             {
                 title: "Action",
                 "data": null,
-                "defaultContent": '<button type="button" onClick="swalConfirmation()" class="text-white btn-danger btn-xs mx-1">Delete</button>'
+                "defaultContent": '<button type="button" onClick="removeDataTable()" class="text-white btn-danger btn-xs mx-1">Delete</button>'
             }
         ],
         dom: 'lBfrtip', buttons: ['csv', 'colvis'
@@ -74,25 +75,69 @@ socket.on('receivedMasterlist', data => {
             //     }
             // }
         ]
-        
+
     });
 
-    $('#datatable tbody').on('click', 'button', function () {
-        var data = table.row($(this).parents('tr')).data();
-        swalConfirmation([
-            data[0],
-            data[1],
-            data[2],
-            data[3],
-            data[4],
-            data[5],
-            data[6],
-            data[7]
-        ])
-    });
+
+
 })
 
 
+const removeDataTable = () => {
+    $('#datatable tbody').on('click', 'button', function () {
+        // e.preventDefault();        
+        console.log('deleted')
+        var data = table.row($(this).parents('tr')).data();
+        // swalConfirmation([
+        //     data[0],
+        //     data[1],
+        //     data[2],
+        //     data[3],
+        //     data[4],
+        //     data[5],
+        //     data[6],
+        //     data[7]
+        // ])
+        console.log("Swal data", data)
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: 'btn btn-success mx-1',
+                cancelButton: 'btn btn-danger mx-1'
+            },
+            buttonsStyling: false
+        })
+        swalWithBootstrapButtons.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, accept it',
+            cancelButtonText: 'No, cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log(data);
+                socket.emit('deleteRecord', data);
+                $(this).closest('tr').remove();
+
+                //   console.log(data)
+                swalWithBootstrapButtons.fire(
+                    'Deleted!',
+                    'Record deleted successfully!',
+                    'success'
+                )
+            }
+            else if (result.dismiss === Swal.DismissReason.cancel) {
+                swalWithBootstrapButtons.fire(
+                    'Cancelled',
+                    'Your imaginary file is safe :)',
+                    'error'
+                )
+            }
+        })
+
+    });
+}
 
 const swalConfirmation = data => {
     console.log("Swal data", data)
@@ -113,11 +158,12 @@ const swalConfirmation = data => {
         reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {
+            console.log(data);
             socket.emit('deleteRecord', data);
             //   console.log(data)
             swalWithBootstrapButtons.fire(
-                'Accepted!',
-                'Your user has been accepted.',
+                'Deleted!',
+                'Record deleted successfully!',
                 'success'
             )
         }

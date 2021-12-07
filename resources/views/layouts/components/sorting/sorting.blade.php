@@ -19,6 +19,7 @@
                 <div class="col-4">
                     <label for="cars">Filter :</label>
                     <select class="form-control select2" name="filter" id="filter" onchange="isFilteredData()">
+                        <option value="" disabled="" selected="">Choose</option>
                         <option value="fname">First Name</option>
                         <option value="lname">Last Name</option>
                         <option value="contact_no">Contact Number</option>
